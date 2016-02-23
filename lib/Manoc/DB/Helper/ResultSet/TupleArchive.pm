@@ -42,6 +42,7 @@ sub register_tuple {
     my $self   = shift;
     my %params = @_;
 
+    my $archive_age = delete($params{-archive_age}) // get_default_archive_age();
     my $tuple_columns = $self->result_class->tuple_archive_columns;
 
     # check params
@@ -58,24 +59,31 @@ sub register_tuple {
     );
 
     if ( scalar(@entries) > 1 ) {
-        warn "More than one non archived entry";
+        warn "More than one non archived entry: this should never happen!";
         return;
     }
-    elsif ( scalar(@entries) == 1 ) {
+
+    if ( scalar(@entries) == 1 ) {
         my $entry = $entries[0];
-        $entry->lastseen($timestamp);
-        $entry->update();
+
+        if ($entry->lastseen > $timestamp - $archive_age ) {
+            $entry->lastseen($timestamp);
+            $entry->update();
+            return;
+        } else {
+            $entry->archived(1);
+            $entry->update;
+        }
     }
-    else {
-        $self->create(
-            {
-                %tuple,
-                firstseen => $timestamp,
-                lastseen  => $timestamp,
-                archived  => 0
-            }
-        );
-    }
+
+    $self->create(
+        {
+            %tuple,
+            firstseen => $timestamp,
+            lastseen  => $timestamp,
+            archived  => 0
+        }
+    );
 }
 
 =head2 archive([ $age ])
@@ -88,8 +96,7 @@ Age defaults to one day.
 sub archive {
     my ( $self, $archive_age ) = @_;
 
-    # default is one day
-    $archive_age ||= 3600 * 24;
+    $archive_age ||= default_archive_age();
 
     my $archive_date = time - $archive_age;
     my $rs           = $self->search(
@@ -104,6 +111,9 @@ sub archive {
 
     return $count;
 }
+
+# default is one day
+sub default_archive_age { 3600 * 24; }
 
 1;
 
