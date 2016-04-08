@@ -5,6 +5,7 @@
 package Manoc::Controller::Root;
 use Moose;
 use namespace::autoclean;
+use Try::Tiny;
 
 BEGIN { extends 'Catalyst::Controller' }
 
@@ -73,12 +74,25 @@ sub auto : Private {
         delete $c->req->params->{'format'};
     }
 
+    ## check database
+    try {
+        my $db = $c->model('ManocDB::User')->count();
+    } catch {
+        $c->log->info("DB is not ready");
+        $c->stash('setup_required' => 1);
+    };
+    if ( $c->stash->{setup_required} ) {
+         $c->controller eq $c->controller('Setup') or
+             $c->detach('setup/database');
+        return 1;
+    }
+
     ## check authentication ##
     if ( !$self->check_auth($c) ) {
         $c->log->debug("Not authenticated") if $c->debug;
 
         if ( $c->stash->{is_api} || $c->stash->{is_xhr} ) {
-            $self->detach('access_denied');
+            $c->detach('access_denied');
         }
         else {
             $c->response->redirect(

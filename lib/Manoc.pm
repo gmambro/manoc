@@ -11,7 +11,6 @@ use Catalyst::Runtime 5.90;
 
 # Set flags and add plugins for the application
 #
-#         -Debug: activates the debug mode for very useful log messages
 #   ConfigLoader: will load the configuration from a Config::General file in the
 #                 application's home directory
 # Static::Simple: will serve static files from the application's root

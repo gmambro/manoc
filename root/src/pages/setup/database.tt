@@ -1,0 +1,22 @@
+<html>
+<head>
+<title>Simple Manoc DB setup</title>
+</head>
+
+<h1>Manoc Setup</h1>
+<table>
+<tr>
+    <td>DB Config</td>
+    <td>[% db_config %]</td>
+<tr>
+<tr>
+    <td>DB created</td>
+    <td>[% IF db_check1 %]OK[% ELSE %]NOK[%END%]</td>
+</tr>
+<tr>
+    <td>Schema</td>
+    <td>[% IF db_check2 %]OK[% ELSE %]NOK[%END%]</td>
+</tr>
+</table>
+
+</html>
