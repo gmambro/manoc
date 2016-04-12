@@ -25,9 +25,9 @@ use Catalyst qw/
     Authentication
 
     Session
-    Session::Store::DBI
     Session::State::Cookie
 
+    +Manoc::CatalystRole::SessionStore
     +Manoc::CatalystRole::RequestToken
     +Manoc::CatalystRole::Permission
 
