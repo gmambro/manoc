@@ -48,6 +48,12 @@ __PACKAGE__->add_columns(
         is_nullable => 0,
         size        => 1,
     },
+    template => {
+        data_type     => 'int',
+        is_nullable   => 0,
+        size          => 1,
+        default_value => 0,
+    },
     location => {
         data_type     => 'varchar',
         is_nullable   => 0,
@@ -160,32 +166,42 @@ sub server {
 =head2 in_use
 
 Return 1 when there is an associated logical item, 0 otherwise.
+Undef means is a template.
 
 =cut
 
 sub in_use {
     my $self = shift;
+
+    return if $self->template;
+
     return ( $self->type eq TYPE_DEVICE && defined( $self->device ) ) ||
         ( $self->type eq TYPE_SERVER && defined( $self->server ) );
 }
 
 sub is_decommissioned {
     my $self = shift;
+    return if $self->template;
     return $self->_location eq LOCATION_DECOMMISSIONED;
 }
 
 sub is_in_warehouse {
     my $self = shift;
+    return if $self->template;
     return $self->_location eq LOCATION_WAREHOUSE;
 }
 
 sub is_in_rack {
     my $self = shift;
+    return if $self->template;
     return $self->_location eq LOCATION_RACK;
 }
 
 sub location {
     my $self = shift;
+
+    $self->template and
+        croak "Tried to change location of an hwasset template";
 
     if (@_) {
         my $location = shift;
@@ -233,6 +249,9 @@ sub decommission {
     my $self = shift;
     my $timestamp = shift || time();
 
+    $self->template and
+        croak "Tried to decommision an hwasset template";
+
     $self->location(LOCATION_DECOMMISSIONED);
     $self->locationchange_ts ||
         $self->locationchange_ts($timestamp);
@@ -240,6 +259,9 @@ sub decommission {
 
 sub restore {
     my $self = shift;
+
+    $self->template and
+        croak "Tried to restore an hwasset template";
 
     return unless $self->location eq LOCATION_DECOMMISSIONED;
 
@@ -250,6 +272,9 @@ sub restore {
 sub move_to_rack {
     my ( $self, $rack ) = @_;
 
+    $self->template and
+        croak "Tried to move_to_rack an hwasset template";
+
     defined($rack) or croak "move_to_rack called with an undef rack";
     my $rack_id = ref($rack) ? $rack->id : $rack;
     $self->rack_id($rack_id);
@@ -258,6 +283,9 @@ sub move_to_rack {
 
 sub move_to_room {
     my ( $self, $building, $floor, $room ) = @_;
+
+    $self->template and
+        croak "Tried to move an hwasset template";
 
     defined($building) or croak "Move to room called with an undef building";
 
@@ -271,6 +299,9 @@ sub move_to_room {
 sub move_to_warehouse {
     my ( $self, $warehouse ) = @_;
 
+    $self->template and
+        croak "Tried to move an hwasset template";
+
     my $warehouse_id = ref($warehouse) ? $warehouse->id : $warehouse;
 
     $self->warehouse_id($warehouse_id);
@@ -279,6 +310,9 @@ sub move_to_warehouse {
 
 sub label {
     my $self = shift;
+
+    $self->template and
+        return "Template " .  $self->vendor . " - " . $self->model;
 
     return $self->inventory . " (" . $self->vendor . " - " . $self->model . ")",;
 }
@@ -318,6 +352,8 @@ sub display_location {
 
 sub generate_inventory {
     my $self = shift;
+
+    return if $self->template;
 
     my $inventory = sprintf( "%s%06d", $self->type, $self->id );
     $self->inventory($inventory);
