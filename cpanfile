@@ -19,6 +19,7 @@ requires "Crypt::Eksblowfish::Bcrypt" => "0";
 requires "DBD::SQLite" => "0";
 requires "DBI" => "0";
 requires "DBIx::Class" => "0";
+requires "DBIx::Class::Migration" => 0;
 requires "DBIx::Class::EncodedColumn" => "0";
 requires "DBIx::Class::Helpers" => "0";
 requires "DBIx::Class::Tree" => "0";

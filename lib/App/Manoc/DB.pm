@@ -4,7 +4,9 @@ package App::Manoc::DB;
 use strict;
 use warnings;
 
-##VERSION
+#don't use ##VERSION
+our $SCHEMA_VERSION = 4;
+our $VERSION        = $SCHEMA_VERSION;
 
 use App::Manoc::DB::Search;
 use App::Manoc::DB::Search::Query;
@@ -18,8 +20,6 @@ It also loads the required L<DBIx::Class::Helper> components and
 provides methods for schema configuration and initialization.
 
 =cut
-
-our $SCHEMA_VERSION = 4;
 
 our $DEFAULT_ADMIN_PASSWORD = 'admin';
 
