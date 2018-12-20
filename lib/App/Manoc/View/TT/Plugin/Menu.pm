@@ -41,13 +41,10 @@ my @DEFAULT_MENU_ITEMS = (
                 name    => 'IP Address Plan',
                 submenu => [
                     {
-                        name   => "All IP Networks",
+                        name   => "IP Networks",
                         action => 'ipnetwork/list',
                     },
-                    {
-                        name   => "Top level IP Networks",
-                        action => 'ipnetwork/root',
-                    },
+
                     {
                         name   => "IP Blocks",
                         action => 'ipblock/list',

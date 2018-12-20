@@ -28,7 +28,8 @@ __PACKAGE__->config(
     view_object_perm    => undef,
     object_list_options => {
         prefetch => 'vlan',
-        order_by => { -asc => 'address' }
+        order_by => [ { -asc => 'me.address' }, { -desc => 'me.broadcast' } ]
+
     }
 );
 
@@ -57,43 +58,30 @@ before 'view' => sub {
     $c->stash( hosts_usage => int( $hosts->count() / $max_hosts * 100 ) );
 };
 
-=action root
-
-Show root IP networks.
+=action view
 
 =cut
 
-sub root : Chained('base') {
+before 'list' => sub {
     my ( $self, $c ) = @_;
 
-    my $rs = $c->stash->{resultset};
+    my $object_list = $c->stash->{object_list};
+    my %depth;
 
-    my $n_roots = $rs->get_root_networks->count();
-    if ( $n_roots == 1 ) {
-        my $root = $rs->get_root_networks->first;
-
-        $c->stash( root_network => $root );
-        $rs = $root->children;
-    }
-    else {
-        $rs = $rs->get_root_networks;
-    }
-
-    my $me       = $rs->current_source_alias;
-    my @networks = $rs->search(
-        {},
-        {
-            prefetch => [ 'vlan', 'children' ],
-            order_by => [
-                { -asc  => "$me.address" },
-                { -desc => "$me.broadcast" },
-                { -asc  => "children.address" },
-                { -desc => "children.broadcast" },
-            ]
+    # just one loop because we have a sorted list
+    for my $n (@$object_list) {
+        my $depth;
+        if ( $n->parent_id ) {
+            $depth = $depth{ $n->parent_id } + 1;
         }
-    )->all();
-    $c->stash( networks => \@networks );
-}
+        else {
+            # it's a root
+            $depth = 0;
+        }
+        $depth{ $n->id } = $depth;
+        $n->{depth} = $depth;
+    }
+};
 
 __PACKAGE__->meta->make_immutable;
 

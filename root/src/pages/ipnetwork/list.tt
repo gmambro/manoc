@@ -3,19 +3,29 @@
 -%]
 [% META
   use_table = 1
--%]
-[%- IF c.check_permission('ipnetwork', 'create') -%]
-<div id="ipnetwork_create">
-<a href="[% c.uri_for_action('ipnetwork/create') %]" class="btn btn-sm btn-primary">[% bootstrap_icon("plus") %] Add</a>
-</div>
-[% init_table("network_list", { toolbar="ipnetwork_create" }) -%]
-[%- ELSE -%]
-[% init_table("network_list") -%]
-[%- END -%]
+ -%]
+
+<div id="tabletoolbar" class="btn-toolbar" role="toolbar">
+[%- IF c.check_permission('ipnetwork.create') -%]
+    <a href="[% c.uri_for_action('ipnetwork/create') %]" class="btn btn-sm btn-primary">[% bootstrap_icon("plus") %] Add</a>
+[% END -%]
+    <div class="btn-group" role="group">
+    <div id="depthfilter_wrapper" class="filtermenu">
+    <select name="depthfilter" id="depthfilter" class="selectpicker" data-style="btn-default btn-sm">
+      <option value="-1">All</option>
+      <option value="0">Root</option>
+      <option value="1">Depth 1</option>
+      <option value="2">Depth 2</option>
+    </select>
+    </div>
+    </div>
+</div><!-- tabletoolbar -->
+
 <div class="col-md-12">
- <table class="table" id="network_list">
+ <table id="network_list" class="table"  data-order="[[ 2, &quot;asc&quot; ]]">
    <thead>
      <tr>
+        <th data-visible='false'>Depth</th>
         <th>Name</th>
         <th>Network</th>
         <th>Vlan</th>
@@ -23,21 +33,50 @@
    </thead>
    <tbody>
 [% FOREACH object IN object_list %]
-         <tr>
-      	 <td><a href="[% c.uri_for_action('ipnetwork/view', [object.id]) %]">[% object.name | html %]</a></td>
-  	 <td data-sort="[% object.network.address.padded  %]">[% object.network | html %]</td>
- 	 <td>[% PP.manoc_print(object.vlan) %]</td>
-         </tr>
+     <tr>
+         <td>[% object.depth %]</td>
+      	 <td>
+             [% '&nbsp;' FILTER repeat(2*object.depth) %]
+             <a href="[% c.uri_for_action('ipnetwork/view', [object.id]) %]">[% object.name | html %]</a>
+         </td>
+         <td data-sort="[% object.network.address.padded %]-[% object.network.prefix FILTER format("%02d") %]">[% object.network | html %]
+        </td>
+        <td>[% PP.manoc_print(object.vlan) %]</td>
+     </tr>
 [% END %]
    </tbody>
 </table>
 </div>
 
-
-
 </div>
 
-[% capture = BLOCK -%]
-$(function() { $('#tree').treed() } );
-[% END -%]
-[% js_scripts.push(capture) -%]
+[% fragment = BLOCK -%]
+/* Custom filtering function for depth */
+$.fn.dataTable.ext.search.push(
+    function( settings, data, dataIndex ) {
+        var max = parseInt( $('#depthfilter').val(), 10 );
+        var val = parseFloat( data[0] ) || 0; // depth column
+
+        if ( isNaN( max ) || max == -1  || val <= max )
+        {
+            return true;
+        }
+        return false;
+    }
+);
+
+$(document).ready(function() {
+    var table = $("#network_list").DataTable( {
+       "dom": '<"row"<"col-sm-6"<"toolbar">><"col-sm-6"f>>rtip',
+     });
+    $("#tabletoolbar").appendTo($("div.toolbar").first());
+
+    $("#depthfilter").on('changed.bs.select',
+      function(e) {
+        table.draw();
+      }
+);
+
+});
+[% END %]
+[% js_scripts.push(fragment) -%]
