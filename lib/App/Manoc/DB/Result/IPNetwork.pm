@@ -63,14 +63,18 @@ __PACKAGE__->add_columns(
         is_nullable    => 1,
         is_foreign_key => 1,
     },
+    'customer_info_id' => {
+        data_type      => 'int',
+        is_nullable    => 1,
+        is_foreign_key => 1,
+    },
     'default_gw' => {
         data_type    => 'varchar',
         is_nullable  => 1,
         size         => 15,
         ipv4_address => 1,
     },
-
-    notes => {
+    'notes' => {
         data_type   => 'text',
         is_nullable => 1,
     },
@@ -391,6 +395,12 @@ __PACKAGE__->add_relationship(
     }
 );
 
+__PACKAGE__->belongs_to(
+    customer_info => 'App::Manoc::DB::Result::CustomerInfo',
+    'customer_info_id',
+    { join_type => 'LEFT' }
+);
+
 =method arp_entries
 
 Return a resultset for all entries in Arp with IP addresses in this network
@@ -412,21 +422,22 @@ sub arp_entries {
     return $rs;
 }
 
-=method ip_entries
+=method host_entries
 
 Return a resultset for all entries IP contained in this network
 
 =cut
 
-sub ip_entries {
+sub host_entries {
     my $self = shift;
 
-    my $rs = $self->result_source->schema->resultset('IPAddressInfo');
+    my $rs = $self->result_source->schema->resultset('IPNetwork');
     $rs = $rs->search(
         {
             'ipaddr' => {
                 -between => [ $self->address->padded, $self->broadcast->padded ]
-            }
+            },
+            prefix => 32
         }
     );
     return wantarray ? $rs->all : $rs;

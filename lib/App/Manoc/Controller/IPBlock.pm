@@ -48,7 +48,7 @@ before 'view' => sub {
     my $arp_total = $block->arp_entries->search( {}, $select_column )->count();
     $c->stash( arp_usage => int( $arp_total / $max_hosts * 100 ) );
 
-    my $hosts = $block->ip_entries;
+    my $hosts = $block->host_entries;
     $c->stash( hosts_usage => int( $hosts->count() / $max_hosts * 100 ) );
 };
 

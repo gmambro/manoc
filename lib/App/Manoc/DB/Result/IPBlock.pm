@@ -70,21 +70,22 @@ sub arp_entries {
     return wantarray ? $rs->all : $rs;
 }
 
-=method ip_entries
+=method host_entries
 
 Return a resultset for all entries IP contained in this block
 
 =cut
 
-sub ip_entries {
+sub host_entries {
     my $self = shift;
 
-    my $rs = $self->result_source->schema->resultset('IPAddressInfo');
+    my $rs = $self->result_source->schema->resultset('IPNetwork');
     $rs = $rs->search(
         {
             'ipaddr' => {
                 -between => [ $self->from_addr->padded, $self->to_addr->padded ]
-            }
+            },
+            prefix => 32
         }
     );
     return wantarray ? $rs->all : $rs;

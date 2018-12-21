@@ -77,21 +77,27 @@
 [% IF object.children_ordered %]
 <div class="col-sm-12">
   <div class="panel panel-default">
-    <div class="panel-heading">Subnets</div>
+    <div class="panel-heading">Subnets and hosts</div>
     <table class="table">
       <thead>
 	<tr>
-	  <th>Network</th>
-	  <th>Broadcast</th>
-	<th>Name</th>
+	  <th>Address</th>
+	  <th>Name</th>
+      <th>Description</th>
 	</tr>
       </thead>
     <tbody>
       [% FOREACH network IN object.children_ordered -%]
       <tr>
-	<td>[% network.network %]</td>
-	  <td>[% network.network.broadcast %]</td>
-	<td>[% PP.manoc_print(network) %]</td>
+	  <td>[% network.network %]</td>
+	  <td>[% PP.manoc_print(network) %]</td>
+      <td>
+          [% IF network.description -%]
+          [% network.description %]
+          [% ELSIF network.customer_info -%]
+          Assigned to [% PP.manoc_print(network.customer_info) %]
+          [% END -%]
+      </td>
       </tr>
       [% END -%]
     </tbody>

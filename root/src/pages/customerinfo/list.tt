@@ -1,0 +1,42 @@
+[%
+   page.title='Customers'
+-%]
+[% META
+   use_table=1
+-%]
+<div id="tabletoolbar" class="btn-toolbar" role="toolbar">
+  <a href="[% c.uri_for_action('/customerinfo/create') %]" class="btn btn-sm btn-default">
+   [% bootstrap_icon('plus') %] Add</a>
+</div>
+
+<table id="customerinfo_table" class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Phone</th>
+      <th>Networks/Hosts</th>
+    </tr>
+  </thead>
+  <tbody>
+    [% FOREACH o IN object_list  %]
+    <tr>
+      <td>[% PP.manoc_print(o) %]</td>
+      <td>[% o.email | html %]</td>
+      <td>[% o.phone | html %]</td>
+      <td>[% o.get_column('num_ipnetworks') %]</td>
+    </tr>
+    [% END %]
+  </tbody>
+</table>
+
+[% fragment = BLOCK -%]
+$(document).ready(function() {
+
+var table = $("#customerinfo_table").DataTable( {
+   "dom": '<"row"<"col-sm-6"<"toolbar">><"col-sm-6"f>>rtip',
+ });
+
+});
+[% END %]
+[% js_scripts.push(fragment) -%]

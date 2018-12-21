@@ -21,8 +21,9 @@ has '+item_class' => ( default => 'IPNetwork' );
 
 sub build_render_list {
     [
-        'network_block', 'name',  'vlan_id', 'default_gw',
-        'description',   'notes', 'save',    'csrf_token'
+        'network_block', 'name',          'vlan_id', 'default_gw',
+        'description',   'customer_info', 'notes',   'save',
+        'csrf_token'
     ];
 }
 
@@ -88,6 +89,17 @@ has_field 'default_gw' => (
 has_field 'description' => (
     type  => 'TextArea',
     label => 'Description',
+);
+
+has_field 'customer_info' => (
+    type         => 'Select',
+    label        => 'Customer',
+    empty_select => '---',
+
+    label_column => 'name',
+
+    element_class => 'selectpicker',
+    element_attr  => { 'data-live-search' => 'true' },
 );
 
 has_field 'notes' => ( type => 'TextArea' );

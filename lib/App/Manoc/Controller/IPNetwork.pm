@@ -11,7 +11,7 @@ BEGIN {
     extends 'Catalyst::Controller';
 }
 
-with 'App::Manoc::ControllerRole::CommonCRUD';
+with 'App::Manoc::ControllerRole::CommonCRUD' => { -excludes => ['view'] };
 
 use App::Manoc::Form::IPNetwork;
 use App::Manoc::Utils::Datetime qw/str2seconds/;
@@ -37,10 +37,18 @@ __PACKAGE__->config(
 
 =cut
 
-before 'view' => sub {
+sub view : Chained('object') : PathPart('') : Args(0) {
     my ( $self, $c ) = @_;
 
-    my $network   = $c->stash->{object};
+    my $network = $c->stash->{object};
+
+    if ( $network->prefix == 32 ) {
+        $c->log->debug("/32 network");
+        $c->stash( ipaddress      => $network->address );
+        $c->stash( network_object => $network );
+        $c->detach('/ipaddress/view');
+    }
+
     my $max_hosts = $network->network->num_hosts;
 
     my $query_by_time = { lastseen => { '>=' => time - str2seconds( 60, 'd' ) } };
@@ -54,9 +62,10 @@ before 'view' => sub {
     my $arp_total = $network->arp_entries->search( {}, $select_column )->count();
     $c->stash( arp_usage => int( $arp_total / $max_hosts * 100 ) );
 
-    my $hosts = $network->ip_entries;
+    my $hosts = $network->host_entries;
     $c->stash( hosts_usage => int( $hosts->count() / $max_hosts * 100 ) );
-};
+
+}
 
 =action view
 

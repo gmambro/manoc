@@ -6,6 +6,22 @@ use_table=1
 -%]
 [% USE date format= "%d/%m/%Y %H:%M:%S" -%]
 
+[% page.toolbar = BLOCK %]
+<div class="btn-group">
+   [% IF object -%]
+   <a class="btn btn-primary [% 'disabled' UNLESS c.check_permission(object, 'edit') %]" href=[%c.uri_for_action('ipnetwork/edit', [object.id]) %]>Edit</a>
+   <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <span class="caret"></span>
+   </button>
+   <ul class="dropdown-menu dropdown-menu-right">
+       <li class="[% 'disabled' UNLESS c.check_permission(object, 'delete') %]">
+           <a href=[% c.uri_for_action('ipnetwork/delete', [object.id]) %]>Delete</a>
+       </li>
+    </ul>
+    [% END -%]
+</div>
+[% END %]
+
 <!-- Nav tabs -->
 <ul class="nav nav-tabs" role="tablist">
 [% bootstrap_nav_tab("info", "Info", 1) -%]
@@ -20,65 +36,58 @@ use_table=1
   <div role="tabpanel" class="tab-pane active" id="info">
     <div class="row">
       <dl class="dl-horizontal">
-  	<dt>IP Address</dt>
-  	<dd>[% ipaddress.address %]</dd>
+        [% IF object -%]
+        <dt>Name</dt>
+        <dd>[% object.name %]</dd>
+        [% END -%]
 
-	<dt>Servers</dt>
-	<dd>[% FOREACH s IN servers %][% PP.manoc_print(s) -%] [% END -%]</dd>
+      	<dt>Address</dt>
+      	<dd>[% ipaddress.address %]</dd>
 
-	<dt>Devices</dt>
-	<dd>[% FOREACH d IN devices %][% PP.manoc_print(d) -%] [% END -%]
+    	<dt>Servers</dt>
+    	<dd>[% FOREACH s IN servers %][% PP.manoc_print(s) -%] [% END -%]</dd>
 
-	<dt>Metworks</dt>
-	<dd>[% FOREACH net IN networks %]
-	  [% bootstrap_icon('chevron-right') UNLESS loop.first -%]
-	  [% PP.manoc_print(net) -%]
-	  [% END -%]
-	</dd>
+    	<dt>Devices</dt>
+    	<dd>[% FOREACH d IN devices %][% PP.manoc_print(d) -%] [% END -%]
 
-	<dt>IP Blocks</td>
-	<dd>[% FOREACH block IN ipblocks %]
-	[% PP.manoc_print(block) %][% "," UNLESS loop.last -%]
-	[%END -%]
-	</dd>
+    	<dt>Networks</dt>
+    	<dd>[% FOREACH net IN networks %]
+    	  [% bootstrap_icon('chevron-right') UNLESS loop.first -%]
+    	  [% PP.manoc_print(net) -%]
+    	  [% END -%]
+    	</dd>
 
-	<dt>Last used VLAN</dt>
-	<dd>[% PP.manoc_print(arp.0.vlan_id) %]</dd>
-	[%IF hostnames.size -%]
-	<dt>Last hostname</dt>
-	<dd>[% hostnames.0.name %]
-	   [% IF hostnames.0.lastseen %]([% date.format(hostnames.0.lastseen) %])[% END %]
-	</dd>
-	[%END -%]
-	[%IF logons.size -%]
-	<dt>Last logon: </dt>
-	<dd>[% logons.0.user %] ([% date.format(logons.0.lastseen) %]) </dd>
-	[%END -%]
+    	<dt>IP Blocks</td>
+    	<dd>[% FOREACH block IN ipblocks %]
+    	[% PP.manoc_print(block) %][% "," UNLESS loop.last -%]
+    	[%END -%]
+    	</dd>
 
-	<dt>Description</dt>
-  	<dd>[% object.description %]</dd>
+    	<dt>Last used VLAN</dt>
+    	<dd>[% PP.manoc_print(arp.0.vlan_id) %]</dd>
+    	[%IF hostnames.size -%]
+    	<dt>Last hostname</dt>
+    	<dd>[% hostnames.0.name %]
+    	   [% IF hostnames.0.lastseen %]([% date.format(hostnames.0.lastseen) %])[% END %]
+    	</dd>
+    	[%END -%]
+    	[%IF logons.size -%]
+    	<dt>Last logon: </dt>
+    	<dd>[% logons.0.user %] ([% date.format(logons.0.lastseen) %]) </dd>
+    	[%END -%]
 
-  	<dt>Assigned to</dt>
-	<dd>[% object.assigned_to %]</dd>
+    	<dt>Description</dt>
+      	<dd>[% object.description %]</dd>
 
-	<dt>Phone</dt>
-	<dd>[% object.phone %]</dd>
+        [% IF object.customer_info -%]
+      	<dt>Assigned to</dt>
+    	<dd>[% PP.manoc_print(object.customer_info) %]</dd>
+        [% END -%]
 
-	<dt>Email</dt>
-  	<dd>[% object.email %]</dd>
-
-	<dt>Notes</dt>
-  	<dd>[% object.notes %]</dd>
+    	<dt>Notes</dt>
+      	<dd>[% object.notes %]</dd>
       </dl>
     </div><!-- row -->
-    <div class="row">
-      <a class="btn btn-default" href="[% c.uri_for_action('ipaddress/edit', [ ipaddress.address ])%]">
-	[% bootstrap_icon('pencil') %] Edit Info</a>
-      [% IF info != '' -%]
-      <a class="btn btn-default" href="[% c.uri_for_action('ipaddress/delete', [ ipaddress.address ])%]">
-	[% bootstrap_icon('trash') %]Delete info</a>
-      [% END -%]
-    </div>
   </div><!-- tab -->
 
   <div role="tabpanel" class="tab-pane" id="mac">

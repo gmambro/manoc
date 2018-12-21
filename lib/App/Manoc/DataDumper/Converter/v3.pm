@@ -8,6 +8,20 @@ extends 'App::Manoc::DataDumper::Converter::Base';
 
 use App::Manoc::Utils::IPAddress qw(padded_ipaddr netmask2prefix);
 
+has 'customerinfo_id_map' => (
+    isa     => 'HashRef',
+    is      => 'rw',
+    lazy    => 1,
+    builder => '_build_customerinfo_id_map',
+);
+
+has 'customerinfo_id_counter' => (
+    isa     => 'Int',
+    is      => 'rw',
+    lazy    => 1,
+    builder => '_build_customerinfo_id_counter',
+);
+
 has 'device_id_map' => (
     isa     => 'HashRef',
     is      => 'rw',
@@ -85,6 +99,30 @@ has 'default_lan_segment' => (
     builder => '_build_default_lan_segment',
 );
 
+sub _build_customerinfo_id_map {
+    my $self = shift;
+    $self->log->info("Loading customer_info ids from DB");
+
+    my @customerinfos = $self->schema->resultset('CustomerInfo')->search(
+        undef,
+        {
+            columns => [qw/ id name /]
+        }
+    );
+
+    my %id_map = map { $_->name => $_->id } @customerinfos;
+    $self->log->info("Loaded customer info (@customerinfos)");
+    return \%id_map;
+}
+
+sub _build_customerinfo_id_counter {
+    my $self = shift;
+
+    my $id = $self->schema->resultset('CustomerInfo')->search( {} )->get_column('id')->max();
+
+    return defined($id) ? $id + 1 : 1;
+}
+
 sub _build_device_id_map {
     my $self = shift;
     $self->log->info("Loading device ids from DB");
@@ -105,6 +143,14 @@ sub _build_device_id_map {
     return \%id_map;
 }
 
+sub _build_device_id_counter {
+    my $self = shift;
+
+    my $id = $self->schema->resultset('Device')->search( {} )->get_column('id')->max();
+
+    return defined($id) ? $id + 1 : 1;
+}
+
 sub _build_interface_id_map {
     my $self = shift;
     $self->log->info("Loading interface ids from DB");
@@ -120,14 +166,6 @@ sub _build_interface_id_map {
 
     $self->log->info("Loaded idmap ifaces");
     return \%id_map;
-}
-
-sub _build_device_id_counter {
-    my $self = shift;
-
-    my $id = $self->schema->resultset('Device')->search( {} )->get_column('id')->max();
-
-    return defined($id) ? $id + 1 : 1;
 }
 
 sub _build_interface_id_counter {
@@ -529,8 +567,6 @@ sub process_additional_table_DeviceIface_if_notes {
     my @new_data;
 
     my $id_map = $self->interface_id_map;
-    use Data::Dumper;
-    print STDERR Dumper($id_map);
 
 ROW:
     foreach (@$data) {
@@ -577,7 +613,35 @@ sub upgrade_DeviceIfStatus {
     }
 }
 
-sub get_table_name_IPAddressInfo { 'ip' }
+sub get_table_name_CustomerInfo { 'ip' }
+
+sub upgrade_CustomerInfo {
+    my ( $self, $data ) = @_;
+
+    my @new_data;
+
+    foreach (@$data) {
+        my $name = $_->{assigned_to};
+        $name or next;
+
+        next if $self->customerinfo_id_map->{$name};
+
+        my $id = $self->customerinfo_id_counter + 1;
+        $self->customerinfo_id_counter($id);
+
+        push @new_data,
+            {
+            id    => $id,
+            name  => $name,
+            phone => $_->{phone},
+            email => $_->{email},
+            };
+
+        $self->customerinfo_id_map->{$name} = $id;
+    }
+
+    @$data = @new_data;
+}
 
 sub upgrade_mat {
     my ( $self, $data ) = @_;
@@ -656,6 +720,8 @@ sub upgrade_VlanRange {
 
 sub get_table_name_IPNetwork { 'ip_range' }
 
+sub get_additional_table_name_IPNetwork { 'ip' }
+
 sub upgrade_IPNetwork {
     my ( $self, $data ) = @_;
 
@@ -667,6 +733,36 @@ sub upgrade_IPNetwork {
         $_->{broadcast} = $_->{to_addr};
         delete @$_{qw(from_addr to_addr network netmask parent)};
     }
+}
+
+sub process_additional_table_IPNetwork_ip {
+    my ( $self, $data ) = @_;
+
+    my @new_data;
+
+    foreach (@$data) {
+        my $r = {};
+
+        $r->{name}      = "host-" . $_->{ipaddr};
+        $r->{address}   = $_->{ipaddr};
+        $r->{prefix}    = 32;
+        $r->{broadcast} = $_->{ipaddr};
+
+        $r->{description} = $_->{description};
+        $r->{notes}       = $_->{notes};
+
+        my $assigned_to = $_->{assigned_to};
+        if ($assigned_to) {
+            my $customer_info_id = $self->customerinfo_id_map->{$assigned_to};
+            $customer_info_id or
+                $self->log->warn("$assigned_to not found in customer info");
+            $r->{customer_info_id} = $customer_info_id;
+        }
+
+        push @new_data, $r;
+    }
+
+    @$data = @new_data;
 }
 
 sub after_import_IPNetwork {

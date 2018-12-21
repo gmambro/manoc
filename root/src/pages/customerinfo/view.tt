@@ -1,0 +1,42 @@
+[%
+   page.title='Customer ' _ object.name
+-%]
+[% page.toolbar = BLOCK -%]
+[%- IF c.check_permission(object, 'edit') || c.check_permission(object, 'delete') -%]
+    <div class="btn-group">
+    <a class="btn btn-primary [% 'disabled' UNLESS c.check_permission(object, 'edit') %]" href="[% c.uri_for_action('customerinfo/edit',[object.id]) %]">[% bootstrap_icon('pencil') %] Edit</a>
+    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-right">
+    <li class="[% 'disabled' UNLESS c.check_permission(object, 'delete') %]">
+       <a href="[%c.uri_for_action('customerinfo/delete',[object.id]) %]">
+       [% bootstrap_icon('trash') %] Delete</a></li>
+    </ul>
+  </div><!-- end btn group -->
+[% END -%]
+[% END -%]
+
+<div class="panel panel-default">
+  <div class="panel-body">
+    <dl class="dl-horizontal">
+      <dt>Name</dt>
+      <dd>[% object.name | html %]</dd>
+      <dt>Email</dt>
+      <dd>[% object.email | html %]</dd>
+      <dt>Phone</dt>
+      <dd>[% object.phone | html %]</dd>
+    </dl>
+  </div><!-- panel body -->
+</div><!-- panel -->
+
+<div class="panel panel-default">
+  <div class="panel-heading">Subnets/Hosts</div>
+  <div class="panel-body">
+      <ul>
+          [% FOR n IN object.ipnetworks -%]
+          <li>[% PP.manoc_print(n) %]</li>
+          [% END -%]
+      </ul>
+  </div><!-- panel body -->
+</div><!-- panel -->

@@ -50,6 +50,7 @@ my $SOURCE_DEPENDECIES = {
     'Dot11Assoc'      => 'Device',
     'Dot11Client'     => 'Device',
     'DiscoveredHost'  => 'DiscoverSession',
+    'IPNetwork'       => 'CustomerInfo',
 };
 
 has 'filename' => (

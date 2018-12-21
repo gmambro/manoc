@@ -1,4 +1,4 @@
-package App::Manoc::DB::Result::IPAddressInfo;
+package App::Manoc::DB::Result::CustomerInfo;
 #ABSTRACT: A model object for information on IP addresses
 
 use strict;
@@ -10,21 +10,15 @@ use parent 'App::Manoc::DB::Result';
 
 __PACKAGE__->load_components(qw/+App::Manoc::DB::InflateColumn::IPv4/);
 
-__PACKAGE__->table('ipaddr_info');
+__PACKAGE__->table('customer_info');
 
 __PACKAGE__->add_columns(
-    'ipaddr' => {
-        data_type    => 'varchar',
-        is_nullable  => 0,
-        size         => 15,
-        ipv4_address => 1,
+    'id' => {
+        data_type         => 'int',
+        is_nullable       => 0,
+        is_auto_increment => 1,
     },
-    'description' => {
-        data_type   => 'varchar',
-        size        => 255,
-        is_nullable => 1,
-    },
-    'assigned_to' => {
+    'name' => {
         data_type   => 'varchar',
         size        => 45,
         is_nullable => 1,
@@ -45,6 +39,24 @@ __PACKAGE__->add_columns(
     },
 );
 
-__PACKAGE__->set_primary_key('ipaddr');
+__PACKAGE__->set_primary_key('id');
+__PACKAGE__->add_unique_constraint( [qw/name/] );
+
+__PACKAGE__->has_many(
+    ipnetworks => 'App::Manoc::DB::Result::IPNetwork',
+    { 'foreign.customer_info_id' => 'self.id' },
+);
+
+=method label
+
+=cut
+
+sub label { shift->name }
 
 1;
+# Local Variables:
+# mode: cperl
+# indent-tabs-mode: nil
+# cperl-indent-level: 4
+# cperl-indent-parens-as-block: t
+# End:
